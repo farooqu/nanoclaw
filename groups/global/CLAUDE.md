@@ -113,3 +113,38 @@ If a user wants tasks running more than ~2x daily and a script can't reduce agen
 - Suggest restructuring with a script that checks the condition first
 - If the user needs an LLM to evaluate data, suggest using an API key with direct Anthropic API calls inside the script
 - Help the user find the minimum viable frequency
+
+---
+
+## Subagent Dispatch
+
+For tasks that are self-contained and benefit from a clean context, use a role-based subagent rather than handling inline. Roles are defined in `/home/node/.claude/skills/roles/`.
+
+**Use a subagent when the task:**
+- Can be fully briefed without conversation history
+- Benefits from focused tools (research, writing, structured analysis)
+- Is long enough to risk polluting this context
+
+**Handle inline when:**
+- It's quick chat, a question, or a clarification
+- It needs context from this conversation
+- It's a scheduling or MCP operation
+- The user says "handle this yourself"
+
+**How to dispatch:**
+
+1. Check `## Available Roles` in your CLAUDE.md for the roles you can use
+2. Pick the role that best fits the task; if nothing fits, handle inline
+3. If the role has `always_confirm: true`, ask the user first: "I'd use [role name] for this — want me to go ahead?" Don't proceed until confirmed
+4. Read the role file and extract model and instructions:
+   ```bash
+   ROLE="/home/node/.claude/skills/roles/<name>/SKILL.md"
+   MODEL=$(grep '^model:' "$ROLE" | sed 's/model:[[:space:]]*//')
+   BODY=$(awk '/^---/{c++; next} c>=2' "$ROLE")
+   ```
+5. Call `Task` with `model: <MODEL>` (or omit to use group default) and prompt = role instructions + a focused brief: what to do, relevant context, any constraints
+6. When the subagent finishes, give the user a short summary — not a verbatim dump of the output
+
+**On failure:** retry once with a clearer brief. After two failures, tell the user what went wrong and stop.
+
+**Subagents cannot:** send messages to the user, spin up their own subagents, or access this group's conversation history.

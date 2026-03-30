@@ -1,6 +1,7 @@
 import { ChildProcess } from 'child_process';
 import { CronExpressionParser } from 'cron-parser';
 import fs from 'fs';
+import path from 'path';
 
 import { ASSISTANT_NAME, SCHEDULER_POLL_INTERVAL, TIMEZONE } from './config.js';
 import {
@@ -20,6 +21,18 @@ import { GroupQueue } from './group-queue.js';
 import { resolveGroupFolderPath } from './group-folder.js';
 import { logger } from './logger.js';
 import { RegisteredGroup, ScheduledTask } from './types.js';
+
+function readGroupModelConfig(folder: string): { model?: string; effort?: 'low' | 'medium' | 'high' | 'max'; thinking?: import('./container-runner.js').ThinkingConfig } {
+  try {
+    const configPath = path.join(resolveGroupFolderPath(folder), 'model-config.json');
+    if (fs.existsSync(configPath)) {
+      return JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    }
+  } catch {
+    // ignore malformed config
+  }
+  return {};
+}
 
 /**
  * Compute the next run time for a recurring task, anchored to the
@@ -181,6 +194,7 @@ async function runTask(
         isScheduledTask: true,
         assistantName: ASSISTANT_NAME,
         script: task.script || undefined,
+        ...readGroupModelConfig(task.group_folder),
       },
       (proc, containerName) =>
         deps.onProcess(task.chat_jid, proc, containerName, task.group_folder),

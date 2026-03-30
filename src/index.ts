@@ -68,6 +68,18 @@ import { logger } from './logger.js';
 // Re-export for backwards compatibility during refactor
 export { escapeXml, formatMessages } from './router.js';
 
+function readGroupModelConfig(folder: string): { model?: string; effort?: 'low' | 'medium' | 'high' | 'max'; thinking?: import('./container-runner.js').ThinkingConfig } {
+  try {
+    const configPath = path.join(resolveGroupFolderPath(folder), 'model-config.json');
+    if (fs.existsSync(configPath)) {
+      return JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    }
+  } catch {
+    // ignore malformed config
+  }
+  return {};
+}
+
 let lastTimestamp = '';
 let sessions: Record<string, string> = {};
 let registeredGroups: Record<string, RegisteredGroup> = {};
@@ -391,6 +403,7 @@ async function runAgent(
         chatJid,
         isMain,
         assistantName: ASSISTANT_NAME,
+        ...readGroupModelConfig(group.folder),
       },
       (proc, containerName) =>
         queue.registerProcess(chatJid, proc, containerName, group.folder),
