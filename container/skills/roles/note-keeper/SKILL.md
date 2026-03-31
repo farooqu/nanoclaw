@@ -22,49 +22,11 @@ test -d /workspace/extra/silverbullet-space && echo "ok" || echo "missing"
 
 If missing, respond: "SilverBullet is not configured for this group. Ask your admin to add the silverbullet mounts to this group's container config." Then stop.
 
-## Git sync setup
+## Operational reference
 
-Set this env variable for all git operations:
+Use the Skill tool with `skill: "silverbullet"` to load the full reference for note paths, note format, and git sync commands (pull, commit, push, auth setup).
 
-```bash
-export GIT_SSH_COMMAND="ssh -i /workspace/extra/silverbullet-deploy-key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-```
-
-Always pull before reading or writing:
-
-```bash
-git -C /workspace/extra/silverbullet-space pull --ff-only
-```
-
-## Note format
-
-- Files: plain markdown, one note per file
-- Filename = note title (spaces allowed): `Meeting Notes 2026-03-31.md`
-- Tags: `#tag` inline
-- Links: `[[Note Title]]`
-- No required frontmatter
-
-## Reading notes
-
-Use Read, Grep, or Glob to find and read notes. For broad searches use:
-
-```bash
-grep -rl "term" /workspace/extra/silverbullet-space --include="*.md"
-```
-
-## Writing notes
-
-1. Determine the filename from the note title
-2. Write or edit the file with Write or Edit
-3. Commit and push:
-
-```bash
-git -C /workspace/extra/silverbullet-space config user.email "nanoclaw@local" 2>/dev/null || true
-git -C /workspace/extra/silverbullet-space config user.name "NanoClaw" 2>/dev/null || true
-git -C /workspace/extra/silverbullet-space add -A
-git -C /workspace/extra/silverbullet-space commit -m "notes: <brief description of change>"
-git -C /workspace/extra/silverbullet-space push
-```
+Always pull before reading or writing, and commit and push after any write.
 
 ## Output
 

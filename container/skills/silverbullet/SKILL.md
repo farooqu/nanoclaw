@@ -50,18 +50,11 @@ git -C /workspace/extra/silverbullet-space pull --ff-only
 
 ```bash
 export GIT_SSH_COMMAND="ssh -i /workspace/extra/silverbullet-deploy-key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+git -C /workspace/extra/silverbullet-space config user.email "nanoclaw@local" 2>/dev/null || true
+git -C /workspace/extra/silverbullet-space config user.name "NanoClaw" 2>/dev/null || true
 git -C /workspace/extra/silverbullet-space add -A
 git -C /workspace/extra/silverbullet-space commit -m "notes: <brief description>"
 git -C /workspace/extra/silverbullet-space push
-```
-
-## Git identity
-
-If git commit fails due to missing identity, set it first:
-
-```bash
-git -C /workspace/extra/silverbullet-space config user.email "nanoclaw@local"
-git -C /workspace/extra/silverbullet-space config user.name "NanoClaw"
 ```
 
 ## Listing notes
