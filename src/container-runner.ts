@@ -489,7 +489,30 @@ async function buildContainerArgs(
 
   args.push('-c', 'exec bun run /app/src/index.ts');
 
+  addSelinuxRelabeling(args);
   return args;
+}
+
+/**
+ * Ensure all -v mounts have the SELinux :z relabeling option so container
+ * processes can read host files regardless of their SELinux label (e.g.
+ * user_tmp_t on /tmp files written by OneCLI). Docker ignores :z on systems
+ * without SELinux, so this is safe everywhere.
+ *
+ * Note: We use lowercase :z (shared) rather than uppercase :Z (private)
+ * because multiple agent containers may share the same host paths (like
+ * groups/ common files) and uppercase :Z would prevent concurrent access.
+ */
+function addSelinuxRelabeling(args: string[]): void {
+  for (let i = 0; i < args.length - 1; i++) {
+    if (args[i] !== '-v') continue;
+    const v = args[i + 1];
+    if (v.toLowerCase().includes('z')) continue;
+    // If there are existing flags (e.g. :ro), we append with a comma.
+    // Otherwise, we append with a colon.
+    const colonCount = (v.match(/:/g) ?? []).length;
+    args[i + 1] = colonCount >= 2 ? `${v},z` : `${v}:z`;
+  }
 }
 
 /** Build a per-agent-group Docker image with custom packages. */
