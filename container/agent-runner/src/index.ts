@@ -71,6 +71,7 @@ async function main(): Promise<void> {
   // MCP server path — bun runs TS directly; no tsc build step in-image.
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const mcpServerPath = path.join(__dirname, 'mcp-tools', 'index.ts');
+  const toolboxMcpPath = path.join(__dirname, 'toolbox-mcp.ts');
 
   // Build MCP servers config: nanoclaw built-in + any from container.json
   const mcpServers: Record<string, { command: string; args: string[]; env: Record<string, string> }> = {
@@ -80,6 +81,12 @@ async function main(): Promise<void> {
       env: {},
     },
   };
+
+  // Register the toolbox server as "tb" (→ mcp__tb__*) when a schema exists.
+  if (fs.existsSync('/workspace/agent/.toolkit-schema.json')) {
+    mcpServers['tb'] = { command: 'bun', args: ['run', toolboxMcpPath], env: {} };
+    log('Toolbox MCP server registered (tb)');
+  }
 
   for (const [name, serverConfig] of Object.entries(config.mcpServers)) {
     mcpServers[name] = serverConfig;

@@ -30,6 +30,13 @@ export interface AdditionalMountConfig {
   readonly?: boolean;
 }
 
+export interface ToolboxConfig {
+  /** TOOLBOX_ROLE passed to toolkit tools on execution. */
+  role: string;
+  /** Domain names to expose — each maps to toolbox/<domain>/ on the host. */
+  domains: string[];
+}
+
 export interface ContainerConfig {
   mcpServers: Record<string, McpServerConfig>;
   packages: { apt: string[]; npm: string[] };
@@ -47,6 +54,8 @@ export interface ContainerConfig {
   agentGroupId?: string;
   /** Max messages per prompt. Falls back to code default if unset. */
   maxMessagesPerPrompt?: number;
+  /** Toolkit integration config. Both role and domains must be set to activate the adapter. */
+  toolboxConfig?: ToolboxConfig;
 }
 
 function emptyConfig(): ContainerConfig {
@@ -87,6 +96,7 @@ export function readContainerConfig(folder: string): ContainerConfig {
       assistantName: raw.assistantName,
       agentGroupId: raw.agentGroupId,
       maxMessagesPerPrompt: raw.maxMessagesPerPrompt,
+      toolboxConfig: raw.toolboxConfig,
     };
   } catch (err) {
     console.error(`[container-config] failed to parse ${p}: ${String(err)}`);

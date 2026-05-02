@@ -4,6 +4,7 @@ import path from 'path';
 import { query as sdkQuery, type HookCallback, type PreCompactHookInput } from '@anthropic-ai/claude-agent-sdk';
 
 import { clearContainerToolInFlight, setContainerToolInFlight } from '../db/connection.js';
+import { getConfig } from '../config.js';
 import { registerProvider } from './provider-registry.js';
 import type { AgentProvider, AgentQuery, McpServerConfig, ProviderEvent, ProviderOptions, QueryInput } from './types.js';
 
@@ -34,8 +35,9 @@ const SDK_DISALLOWED_TOOLS = [
   'ExitWorktree',
 ];
 
-// Tool allowlist for NanoClaw agent containers
-const TOOL_ALLOWLIST = [
+// Base tools always available in every NanoClaw agent container.
+// Group-specific MCP tools (from container.json allowedTools) are merged in at query time.
+const BASE_TOOL_ALLOWLIST = [
   'Bash',
   'Read',
   'Write',
@@ -56,6 +58,11 @@ const TOOL_ALLOWLIST = [
   'NotebookEdit',
   'mcp__nanoclaw__*',
 ];
+
+function buildToolAllowlist(): string[] {
+  const config = getConfig();
+  return [...BASE_TOOL_ALLOWLIST, ...config.allowedTools];
+}
 
 interface SDKUserMessage {
   type: 'user';
@@ -277,10 +284,10 @@ export class ClaudeProvider implements AgentProvider {
         resume: input.continuation,
         pathToClaudeCodeExecutable: '/pnpm/claude',
         systemPrompt: instructions ? { type: 'preset' as const, preset: 'claude_code' as const, append: instructions } : undefined,
-        allowedTools: TOOL_ALLOWLIST,
+        allowedTools: buildToolAllowlist(),
         disallowedTools: SDK_DISALLOWED_TOOLS,
         env: this.env,
-        permissionMode: 'bypassPermissions',
+        permissionMode: 'dontAsk',
         allowDangerouslySkipPermissions: true,
         settingSources: ['project', 'user'],
         mcpServers: this.mcpServers,

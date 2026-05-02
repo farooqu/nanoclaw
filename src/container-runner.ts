@@ -28,6 +28,7 @@ import { initGroupFilesystem } from './group-init.js';
 import { stopTypingRefresh } from './modules/typing/index.js';
 import { log } from './log.js';
 import { validateAdditionalMounts } from './modules/mount-security/index.js';
+import { generateToolkitSchema } from './modules/toolbox/index.js';
 // Provider host-side config barrel — each provider that needs host-side
 // container setup self-registers on import.
 import './providers/index.js';
@@ -126,6 +127,11 @@ async function spawnContainer(session: Session): Promise<void> {
   // Ensure container.json has the agent group identity fields the runner needs.
   // Written at spawn time so the runner can read them from the RO mount.
   ensureRuntimeFields(containerConfig, agentGroup);
+
+  // Generate toolkit schema for this group's configured domains.
+  // The schema file lands in groups/<folder>/ and is readable inside the
+  // container at /workspace/agent/.toolkit-schema.json via the group dir mount.
+  generateToolkitSchema(agentGroup.folder);
 
   // Resolve the effective provider + any host-side contribution it declares
   // (extra mounts, env passthrough). Computed once and threaded through both

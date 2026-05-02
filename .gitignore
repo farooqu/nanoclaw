@@ -14,6 +14,9 @@ logs/
 # Groups - per-installation state, not tracked
 groups/*
 
+# Toolbox - installation-specific symlinks to ai-toolkit domains
+container/toolbox/
+
 # Composer-managed CLAUDE.md artifacts (regenerated every spawn) and
 # per-group memory (CLAUDE.local.md) must never be committed.
 **/CLAUDE.local.md
