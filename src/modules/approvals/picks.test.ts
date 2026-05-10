@@ -143,4 +143,24 @@ describe('pickApprovalDelivery', () => {
     seedUser('telegram:111', 'telegram');
     expect(await pickApprovalDelivery(['telegram:111'], 'telegram')).toBeNull();
   });
+
+  it('skips native adapters (cli, signal) and uses chat sdk bridges instead', async () => {
+    await mountMockAdapter('cli');
+    await mountMockAdapter('discord', async (h) => `dm-${h}`);
+    seedUser('cli:local', 'cli');
+    seedUser('discord:222', 'discord');
+
+    // CLI is first in the list, but it's a native adapter and should be skipped.
+    // Discord should be picked instead.
+    const result = await pickApprovalDelivery(['cli:local', 'discord:222'], '');
+    expect(result?.userId).toBe('discord:222');
+  });
+
+  it('returns null when only native adapter approvers are available', async () => {
+    await mountMockAdapter('cli');
+    seedUser('cli:local', 'cli');
+
+    const result = await pickApprovalDelivery(['cli:local'], '');
+    expect(result).toBeNull();
+  });
 });

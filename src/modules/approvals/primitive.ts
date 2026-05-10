@@ -92,9 +92,15 @@ export function pickApprover(agentGroupId: string | null): string[] {
   return approvers;
 }
 
+/** Native adapters that don't support approval cards (ask_question). */
+const NATIVE_ADAPTERS = new Set(['cli', 'signal']);
+
 /**
  * Walk the approver list and return the first (approverId, messagingGroup)
  * pair we can actually deliver to. Returns null if nobody is reachable.
+ *
+ * Skips native adapters (cli, signal) that don't support ask_question cards;
+ * only Chat SDK bridges can deliver approval cards.
  *
  * Tie-break: prefer approvers reachable on the same channel kind as the
  * origin; else first in list. Resolution uses ensureUserDm, which may
@@ -106,12 +112,16 @@ export async function pickApprovalDelivery(
 ): Promise<{ userId: string; messagingGroup: MessagingGroup } | null> {
   if (originChannelType) {
     for (const userId of approvers) {
-      if (channelTypeOf(userId) !== originChannelType) continue;
+      const ct = channelTypeOf(userId);
+      if (ct !== originChannelType) continue;
+      if (NATIVE_ADAPTERS.has(ct)) continue; // Skip native adapters for approvals
       const mg = await ensureUserDm(userId);
       if (mg) return { userId, messagingGroup: mg };
     }
   }
   for (const userId of approvers) {
+    const ct = channelTypeOf(userId);
+    if (NATIVE_ADAPTERS.has(ct)) continue; // Skip native adapters for approvals
     const mg = await ensureUserDm(userId);
     if (mg) return { userId, messagingGroup: mg };
   }
